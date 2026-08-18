@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "613960519521",
+    "project_id": "task-manager-machine-round",
+    "storage_bucket": "task-manager-machine-round.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:613960519521:android:9bca73d4cb43ef794b3f20",
+        "android_client_info": {
+          "package_name": "com.example.task_manager"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyArtmMl9gNWKBsbSC9WEwkcKNBwATzfR9g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
