@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:task_manager/core/providers/task_provider.dart';
-
 import '../models/task_model.dart';
-
 
 class AddEditTaskScreen extends ConsumerStatefulWidget {
   final TaskModel? task;
@@ -21,38 +19,21 @@ class AddEditTaskScreen extends ConsumerStatefulWidget {
 
 class _AddEditTaskScreenState
     extends ConsumerState<AddEditTaskScreen> {
-  final formKey =
-      GlobalKey<FormState>();
+  final formKey = GlobalKey<FormState>();
 
-  final titleController =
-      TextEditingController();
+  final titleController = TextEditingController();
 
-  final descriptionController =
-      TextEditingController();
+  final descriptionController = TextEditingController();
 
-  String priority = 'Medium';
-
-  DateTime? dueDate;
-
-  bool get isEdit =>
-      widget.task != null;
+  bool get isEdit => widget.task != null;
 
   @override
   void initState() {
     super.initState();
 
     if (widget.task != null) {
-      titleController.text =
-          widget.task!.title;
-
-      descriptionController.text =
-          widget.task!.description;
-
-      priority =
-          widget.task!.priority;
-
-      dueDate =
-          widget.task!.dueDate;
+      titleController.text = widget.task!.title;
+      descriptionController.text = widget.task!.description;
     }
   }
 
@@ -60,18 +41,19 @@ class _AddEditTaskScreenState
   void dispose() {
     titleController.dispose();
     descriptionController.dispose();
-
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final formState = ref.watch(
+      taskFormProvider(widget.task),
+    );
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          isEdit
-              ? 'Edit Task'
-              : 'Add Task',
+          isEdit ? 'Edit Task' : 'Add Task',
         ),
       ),
       body: Form(
@@ -81,15 +63,11 @@ class _AddEditTaskScreenState
           children: [
             TextFormField(
               controller: titleController,
-              decoration:
-                  const InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Title',
-                hintText:
-                    'Enter task title',
-                prefixIcon:
-                    Icon(Icons.title),
-                border:
-                    OutlineInputBorder(),
+                hintText: 'Enter task title',
+                prefixIcon: Icon(Icons.title),
+                border: OutlineInputBorder(),
               ),
               validator: (value) {
                 if (value == null ||
@@ -108,18 +86,13 @@ class _AddEditTaskScreenState
             const SizedBox(height: 16),
 
             TextFormField(
-              controller:
-                  descriptionController,
+              controller: descriptionController,
               maxLines: 4,
-              decoration:
-                  const InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Description',
-                hintText:
-                    'Enter description',
-                prefixIcon:
-                    Icon(Icons.description),
-                border:
-                    OutlineInputBorder(),
+                hintText: 'Enter description',
+                prefixIcon: Icon(Icons.description),
+                border: OutlineInputBorder(),
                 alignLabelWithHint: true,
               ),
             ),
@@ -127,14 +100,11 @@ class _AddEditTaskScreenState
             const SizedBox(height: 16),
 
             DropdownButtonFormField<String>(
-              value: priority,
-              decoration:
-                  const InputDecoration(
+              value: formState.priority,
+              decoration: const InputDecoration(
                 labelText: 'Priority',
-                prefixIcon:
-                    Icon(Icons.flag),
-                border:
-                    OutlineInputBorder(),
+                prefixIcon: Icon(Icons.flag),
+                border: OutlineInputBorder(),
               ),
               items: const [
                 DropdownMenuItem(
@@ -152,9 +122,12 @@ class _AddEditTaskScreenState
               ],
               onChanged: (value) {
                 if (value != null) {
-                  setState(() {
-                    priority = value;
-                  });
+                  ref
+                      .read(
+                        taskFormProvider(widget.task)
+                            .notifier,
+                      )
+                      .setPriority(value);
                 }
               },
             ),
@@ -164,21 +137,18 @@ class _AddEditTaskScreenState
             InkWell(
               onTap: selectDate,
               child: InputDecorator(
-                decoration:
-                    const InputDecoration(
+                decoration: const InputDecoration(
                   labelText: 'Due Date',
                   prefixIcon: Icon(
                     Icons.calendar_month,
                   ),
-                  border:
-                      OutlineInputBorder(),
+                  border: OutlineInputBorder(),
                 ),
                 child: Text(
-                  dueDate == null
+                  formState.dueDate == null
                       ? 'Select due date'
-                      : DateFormat(
-                          'dd MMM yyyy',
-                        ).format(dueDate!),
+                      : DateFormat('dd MMM yyyy')
+                          .format(formState.dueDate!),
                 ),
               ),
             ),
@@ -193,11 +163,9 @@ class _AddEditTaskScreenState
                   isEdit
                       ? 'Update Task'
                       : 'Create Task',
-                  style:
-                      const TextStyle(
+                  style: const TextStyle(
                     fontSize: 16,
-                    fontWeight:
-                        FontWeight.bold,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
@@ -209,19 +177,31 @@ class _AddEditTaskScreenState
   }
 
   Future<void> selectDate() async {
-    final selected =
-        await showDatePicker(
+    final formState = ref.read(
+      taskFormProvider(widget.task),
+    );
+
+    final today = DateTime.now();
+
+    final initialDate =
+        formState.dueDate != null &&
+                !formState.dueDate!.isBefore(today)
+            ? formState.dueDate!
+            : today;
+
+    final selected = await showDatePicker(
       context: context,
-      initialDate:
-          dueDate ?? DateTime.now(),
-      firstDate: DateTime.now(),
+      initialDate: initialDate,
+      firstDate: today,
       lastDate: DateTime(2100),
     );
 
     if (selected != null) {
-      setState(() {
-        dueDate = selected;
-      });
+      ref
+          .read(
+            taskFormProvider(widget.task).notifier,
+          )
+          .setDueDate(selected);
     }
   }
 
@@ -230,9 +210,12 @@ class _AddEditTaskScreenState
       return;
     }
 
-    if (dueDate == null) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
+    final formState = ref.read(
+      taskFormProvider(widget.task),
+    );
+
+    if (formState.dueDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
             'Please select a due date',
@@ -243,27 +226,26 @@ class _AddEditTaskScreenState
       return;
     }
 
-    final notifier =
-        ref.read(taskProvider.notifier);
+    final notifier = ref.read(
+      taskProvider.notifier,
+    );
 
     if (isEdit) {
       await notifier.updateTask(
         task: widget.task!,
-        title:
-            titleController.text.trim(),
+        title: titleController.text.trim(),
         description:
             descriptionController.text.trim(),
-        priority: priority,
-        dueDate: dueDate!,
+        priority: formState.priority,
+        dueDate: formState.dueDate!,
       );
     } else {
       await notifier.createTask(
-        title:
-            titleController.text.trim(),
+        title: titleController.text.trim(),
         description:
             descriptionController.text.trim(),
-        priority: priority,
-        dueDate: dueDate!,
+        priority: formState.priority,
+        dueDate: formState.dueDate!,
       );
     }
 

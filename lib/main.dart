@@ -1,10 +1,10 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:task_manager/data/local/task_local_data_source.dart';
+import 'package:task_manager/features/task/data/local/task_local_data_source.dart';
 import 'core/providers/providers.dart';
 import 'firebase_options.dart';
-import 'screens/task_list_screen.dart';
+import 'features/task/screens/task_list_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

@@ -1,5 +1,5 @@
-import 'package:task_manager/data/local/task_local_data_source.dart';
-import 'package:task_manager/data/remote/task_remote_datasource.dart';
+import 'package:task_manager/features/task/data/local/task_local_data_source.dart';
+import 'package:task_manager/features/task/data/remote/task_remote_datasource.dart';
 import '../../models/task_model.dart';
 
 

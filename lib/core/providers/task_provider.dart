@@ -2,8 +2,8 @@ import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:task_manager/core/providers/providers.dart';
-import 'package:task_manager/data/repository/task_repository.dart';
-import 'package:task_manager/models/task_model.dart';
+import 'package:task_manager/features/task/data/repository/task_repository.dart';
+import 'package:task_manager/features/task/models/task_model.dart';
 import 'package:uuid/uuid.dart';
 
 final taskRepositoryProvider = Provider<TaskRepository>((ref) {
@@ -188,21 +188,16 @@ class TaskNotifier extends StateNotifier<TaskState> {
       isDeleted: false,
     );
 
-    // Save locally
     await repository.saveLocalTask(updatedTask);
 
     refreshTasks();
 
-    // Sync if online
     if (state.isOnline) {
       await syncTasks();
     }
   }
 
-  // ===================================================
-  // COMPLETE / UNCOMPLETE
-  // ===================================================
-
+ 
   Future<void> toggleCompleted(TaskModel task) async {
     final updatedTask = task.copyWith(
       isCompleted: !task.isCompleted,
@@ -218,9 +213,7 @@ class TaskNotifier extends StateNotifier<TaskState> {
     }
   }
 
-  // ===================================================
-  // DELETE TASK
-  // ===================================================
+
 
   Future<void> deleteTask(TaskModel task) async {
     await repository.markDeleted(task.id);
@@ -232,41 +225,28 @@ class TaskNotifier extends StateNotifier<TaskState> {
     }
   }
 
-  // ===================================================
-  // SEARCH
-  // ===================================================
+ 
 
   void search(String value) {
     state = state.copyWith(searchQuery: value);
   }
 
-  // ===================================================
-  // FILTER
-  // ===================================================
-
   void setFilter(String value) {
     state = state.copyWith(filter: value);
   }
 
-  // ===================================================
-  // SORT
-  // ===================================================
+  
 
   void setSort(String value) {
     state = state.copyWith(sort: value);
   }
 
-  // ===================================================
-  // REFRESH FROM HIVE
-  // ===================================================
 
   void refreshTasks() {
     state = state.copyWith(tasks: repository.getLocalTasks());
   }
 
-  // ===================================================
-  // SYNC
-  // ===================================================
+  
 
   Future<void> syncTasks() async {
     if (!state.isOnline) {
@@ -289,9 +269,7 @@ class TaskNotifier extends StateNotifier<TaskState> {
     }
   }
 
-  // ===================================================
-  // CHECK CONNECTIVITY
-  // ===================================================
+
 
   Future<void> checkConnectivity() async {
     final results = await Connectivity().checkConnectivity();
@@ -301,9 +279,7 @@ class TaskNotifier extends StateNotifier<TaskState> {
     state = state.copyWith(isOnline: online);
   }
 
-  // ===================================================
-  // LISTEN CONNECTIVITY
-  // ===================================================
+ 
 
   void listenConnectivity() {
     connectivitySubscription = Connectivity().onConnectivityChanged.listen((
@@ -313,17 +289,13 @@ class TaskNotifier extends StateNotifier<TaskState> {
 
       state = state.copyWith(isOnline: online);
 
-      // Internet came back
       if (online) {
         await syncTasks();
       }
     });
   }
 
-  // ===================================================
-  // DISPOSE
-  // ===================================================
-
+  
   @override
   Future<void> dispose() async {
     await connectivitySubscription?.cancel();
@@ -331,3 +303,48 @@ class TaskNotifier extends StateNotifier<TaskState> {
     super.dispose();
   }
 }
+
+class TaskFormState {
+  final String priority;
+  final DateTime? dueDate;
+
+  const TaskFormState({
+    this.priority = 'Medium',
+    this.dueDate,
+  });
+
+  TaskFormState copyWith({
+    String? priority,
+    DateTime? dueDate,
+  }) {
+    return TaskFormState(
+      priority: priority ?? this.priority,
+      dueDate: dueDate ?? this.dueDate,
+    );
+  }
+}
+
+class TaskFormNotifier extends StateNotifier<TaskFormState> {
+  TaskFormNotifier(TaskModel? task)
+      : super(
+          TaskFormState(
+            priority: task?.priority ?? 'Medium',
+            dueDate: task?.dueDate,
+          ),
+        );
+
+  void setPriority(String value) {
+    state = state.copyWith(priority: value);
+  }
+
+  void setDueDate(DateTime value) {
+    state = state.copyWith(dueDate: value);
+  }
+}
+
+final taskFormProvider = StateNotifierProvider.autoDispose
+    .family<TaskFormNotifier, TaskFormState, TaskModel?>(
+  (ref, task) {
+    return TaskFormNotifier(task);
+  },
+);

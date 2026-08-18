@@ -2,16 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:task_manager/core/providers/task_provider.dart';
-import 'package:task_manager/screens/task_details_screen.dart';
+import 'package:task_manager/features/task/screens/task_details_screen.dart';
+
 import '../models/task_model.dart';
 import 'add_edit_task_screen.dart';
-
 
 class TaskListScreen extends ConsumerWidget {
   const TaskListScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(
+    BuildContext context,
+    WidgetRef ref,
+  ) {
     final state = ref.watch(taskProvider);
 
     return Scaffold(
@@ -28,23 +31,19 @@ class TaskListScreen extends ConsumerWidget {
       ),
       body: Column(
         children: [
-          _SearchBox(),
-          _FilterSortRow(),
+          const _SearchBox(),
+          const _FilterSortRow(),
           Expanded(
-            child: _TaskBody(
-              state: state,
-            ),
+            child: _TaskBody(state: state),
           ),
         ],
       ),
-      floatingActionButton:
-          FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) =>
-                  const AddEditTaskScreen(),
+              builder: (_) => const AddEditTaskScreen(),
             ),
           );
         },
@@ -55,9 +54,6 @@ class TaskListScreen extends ConsumerWidget {
   }
 }
 
-// --------------------------------------------------
-// SYNC INDICATOR
-// --------------------------------------------------
 
 class _SyncIndicator extends StatelessWidget {
   final TaskState state;
@@ -112,11 +108,10 @@ class _SyncIndicator extends StatelessWidget {
   }
 }
 
-// --------------------------------------------------
-// SEARCH
-// --------------------------------------------------
 
 class _SearchBox extends ConsumerWidget {
+  const _SearchBox();
+
   @override
   Widget build(
     BuildContext context,
@@ -137,13 +132,11 @@ class _SearchBox extends ConsumerWidget {
         },
         decoration: InputDecoration(
           hintText: 'Search task title...',
-          prefixIcon:
-              const Icon(Icons.search),
+          prefixIcon: const Icon(Icons.search),
           filled: true,
           fillColor: Colors.white,
           border: OutlineInputBorder(
-            borderRadius:
-                BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(14),
             borderSide: BorderSide.none,
           ),
         ),
@@ -152,11 +145,10 @@ class _SearchBox extends ConsumerWidget {
   }
 }
 
-// --------------------------------------------------
-// FILTER + SORT
-// --------------------------------------------------
 
 class _FilterSortRow extends ConsumerWidget {
+  const _FilterSortRow();
+
   @override
   Widget build(
     BuildContext context,
@@ -178,8 +170,7 @@ class _FilterSortRow extends ConsumerWidget {
                 filled: true,
                 fillColor: Colors.white,
                 border: OutlineInputBorder(
-                  borderRadius:
-                      BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
                 ),
               ),
@@ -215,8 +206,7 @@ class _FilterSortRow extends ConsumerWidget {
                 filled: true,
                 fillColor: Colors.white,
                 border: OutlineInputBorder(
-                  borderRadius:
-                      BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
                 ),
               ),
@@ -245,9 +235,6 @@ class _FilterSortRow extends ConsumerWidget {
   }
 }
 
-// --------------------------------------------------
-// BODY
-// --------------------------------------------------
 
 class _TaskBody extends ConsumerWidget {
   final TaskState state;
@@ -261,8 +248,7 @@ class _TaskBody extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
   ) {
-    if (state.isLoading &&
-        state.tasks.isEmpty) {
+    if (state.isLoading && state.tasks.isEmpty) {
       return const Center(
         child: CircularProgressIndicator(),
       );
@@ -282,8 +268,8 @@ class _TaskBody extends ConsumerWidget {
     }
 
     return RefreshIndicator(
-      onRefresh: () async {
-        await ref
+      onRefresh: () {
+        return ref
             .read(taskProvider.notifier)
             .syncTasks();
       },
@@ -300,9 +286,6 @@ class _TaskBody extends ConsumerWidget {
   }
 }
 
-// --------------------------------------------------
-// TASK CARD
-// --------------------------------------------------
 
 class _TaskCard extends ConsumerWidget {
   final TaskModel task;
@@ -316,32 +299,21 @@ class _TaskCard extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
   ) {
-    Color priorityColor;
-
-    switch (task.priority) {
-      case 'High':
-        priorityColor = Colors.red;
-        break;
-      case 'Medium':
-        priorityColor = Colors.orange;
-        break;
-      default:
-        priorityColor = Colors.green;
-    }
+    final priorityColor = _getPriorityColor(
+      task.priority,
+    );
 
     return Card(
       margin: const EdgeInsets.only(
         bottom: 12,
       ),
       child: InkWell(
-        borderRadius:
-            BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(12),
         onTap: () {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) =>
-                  TaskDetailScreen(
+              builder: (_) => TaskDetailScreen(
                 task: task,
               ),
             ),
@@ -353,8 +325,8 @@ class _TaskCard extends ConsumerWidget {
             children: [
               Checkbox(
                 value: task.isCompleted,
-                onChanged: (_) {
-                  ref
+                onChanged: (_) async {
+                  await ref
                       .read(taskProvider.notifier)
                       .toggleCompleted(task);
                 },
@@ -369,13 +341,10 @@ class _TaskCard extends ConsumerWidget {
                       task.title,
                       style: TextStyle(
                         fontSize: 17,
-                        fontWeight:
-                            FontWeight.bold,
-                        decoration:
-                            task.isCompleted
-                                ? TextDecoration
-                                    .lineThrough
-                                : null,
+                        fontWeight: FontWeight.bold,
+                        decoration: task.isCompleted
+                            ? TextDecoration.lineThrough
+                            : null,
                       ),
                     ),
                     const SizedBox(height: 5),
@@ -384,8 +353,7 @@ class _TaskCard extends ConsumerWidget {
                           ? 'No description'
                           : task.description,
                       maxLines: 2,
-                      overflow:
-                          TextOverflow.ellipsis,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         color: Colors.grey,
                       ),
@@ -395,28 +363,21 @@ class _TaskCard extends ConsumerWidget {
                       children: [
                         Container(
                           padding:
-                              const EdgeInsets
-                                  .symmetric(
+                              const EdgeInsets.symmetric(
                             horizontal: 8,
                             vertical: 4,
                           ),
-                          decoration:
-                              BoxDecoration(
+                          decoration: BoxDecoration(
                             color: priorityColor
-                                .withOpacity(
-                              0.1,
-                            ),
+                                .withValues(alpha: 0.1),
                             borderRadius:
-                                BorderRadius
-                                    .circular(8),
+                                BorderRadius.circular(8),
                           ),
                           child: Text(
                             task.priority,
                             style: TextStyle(
-                              color:
-                                  priorityColor,
-                              fontWeight:
-                                  FontWeight.w600,
+                              color: priorityColor,
+                              fontWeight: FontWeight.w600,
                               fontSize: 12,
                             ),
                           ),
@@ -429,13 +390,9 @@ class _TaskCard extends ConsumerWidget {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          DateFormat(
-                            'dd MMM yyyy',
-                          ).format(
-                            task.dueDate,
-                          ),
-                          style:
-                              const TextStyle(
+                          DateFormat('dd MMM yyyy')
+                              .format(task.dueDate),
+                          style: const TextStyle(
                             color: Colors.grey,
                             fontSize: 12,
                           ),
@@ -451,8 +408,7 @@ class _TaskCard extends ConsumerWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) =>
-                            AddEditTaskScreen(
+                        builder: (_) => AddEditTaskScreen(
                           task: task,
                         ),
                       ),
@@ -484,34 +440,46 @@ class _TaskCard extends ConsumerWidget {
     );
   }
 
+  Color _getPriorityColor(String priority) {
+    switch (priority) {
+      case 'High':
+        return Colors.red;
+      case 'Medium':
+        return Colors.orange;
+      case 'Low':
+      default:
+        return Colors.green;
+    }
+  }
+
   void _deleteTask(
     BuildContext context,
     WidgetRef ref,
   ) {
     showDialog(
       context: context,
-      builder: (_) {
+      builder: (dialogContext) {
         return AlertDialog(
-          title: const Text(
-            'Delete Task',
-          ),
+          title: const Text('Delete Task'),
           content: const Text(
             'Are you sure you want to delete this task?',
           ),
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.pop(context);
+                Navigator.pop(dialogContext);
               },
               child: const Text('Cancel'),
             ),
             TextButton(
-              onPressed: () {
-                ref
+              onPressed: () async {
+                await ref
                     .read(taskProvider.notifier)
                     .deleteTask(task);
 
-                Navigator.pop(context);
+                if (dialogContext.mounted) {
+                  Navigator.pop(dialogContext);
+                }
               },
               child: const Text(
                 'Delete',
@@ -527,9 +495,6 @@ class _TaskCard extends ConsumerWidget {
   }
 }
 
-// --------------------------------------------------
-// EMPTY
-// --------------------------------------------------
 
 class _EmptyView extends StatelessWidget {
   const _EmptyView();
@@ -538,8 +503,7 @@ class _EmptyView extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Center(
       child: Column(
-        mainAxisAlignment:
-            MainAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
             Icons.task_alt,
@@ -567,9 +531,7 @@ class _EmptyView extends StatelessWidget {
   }
 }
 
-// --------------------------------------------------
-// ERROR
-// --------------------------------------------------
+
 
 class _ErrorView extends ConsumerWidget {
   final String message;
@@ -585,8 +547,7 @@ class _ErrorView extends ConsumerWidget {
   ) {
     return Center(
       child: Column(
-        mainAxisAlignment:
-            MainAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const Icon(
             Icons.error_outline,
